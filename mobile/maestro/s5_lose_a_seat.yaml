@@ -1,0 +1,23 @@
+appId: dev.kurtish.booking_mobile
+name: S5 Lose a seat to another buyer
+---
+- runScript:
+    file: scripts/new_event.js
+    env:
+      NAME: S5 Lose a seat
+      SEATS: 2
+- runFlow: common/open_app.yaml
+- runFlow:
+    file: common/sign_in.yaml
+    env:
+      KEY: key-user-2
+- runFlow: common/open_event.yaml
+- tapOn:
+    id: "seat-S-1"
+- runScript: scripts/rival_buys.js
+- tapOn: "Buy 1 seat"
+- assertVisible: "Someone just took one of those seats.*"
+- extendedWaitUntil:
+    notVisible:
+      id: "seat-S-1"
+    timeout: 20000

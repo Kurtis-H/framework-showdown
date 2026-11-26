@@ -1,0 +1,21 @@
+appId: dev.kurtish.booking_mobile
+name: S2 Sign-in errors
+---
+- runFlow: common/open_app.yaml
+- tapOn: "Sign in"
+- extendedWaitUntil:
+    visible:
+      id: "api-key-field"
+    timeout: 20000
+- tapOn:
+    text: "Sign in"
+    index: 1
+- assertVisible: "Enter an API key."
+- tapOn:
+    id: "api-key-field"
+- inputText: "key-not-real"
+- hideKeyboard
+- tapOn:
+    text: "Sign in"
+    index: 1
+- assertVisible: "That API key wasn't recognised."

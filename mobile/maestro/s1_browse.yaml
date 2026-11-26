@@ -1,0 +1,7 @@
+appId: dev.kurtish.booking_mobile
+name: S1 Browse events
+---
+- runFlow: common/open_app.yaml
+- assertVisible: "Page 1 of \\d+"
+- tapOn: "Next"
+- assertVisible: "Page 2 of \\d+"

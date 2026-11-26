@@ -1,0 +1,15 @@
+# Fresh events are on page 2 (see plan/test-plan.md). Needs output.eventId.
+appId: dev.kurtish.booking_mobile
+---
+- tapOn: "Next"
+- assertVisible: "Page 2 of \\d+"
+- scrollUntilVisible:
+    element:
+      id: "event-${output.eventId}"
+    direction: DOWN
+    timeout: 20000
+- tapOn:
+    id: "event-${output.eventId}"
+- extendedWaitUntil:
+    visible: "Choose your seats"
+    timeout: 20000
