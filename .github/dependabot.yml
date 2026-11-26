@@ -1,0 +1,14 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directories: ["/web/playwright", "/web/cypress", "/mobile/appium"]
+    schedule:
+      interval: weekly
+    groups:
+      test-tools:
+        patterns: ["*"]
+        update-types: [minor, patch]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

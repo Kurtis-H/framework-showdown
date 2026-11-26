@@ -1,0 +1,29 @@
+appId: dev.kurtish.booking_mobile
+name: S3 Buy two seats
+---
+- runScript:
+    file: scripts/new_event.js
+    env:
+      NAME: S3 Buy two seats
+      SEATS: 4
+- runFlow: common/open_app.yaml
+- runFlow:
+    file: common/sign_in.yaml
+    env:
+      KEY: key-user-2
+- runFlow: common/open_event.yaml
+- tapOn:
+    id: "seat-S-1"
+- tapOn:
+    id: "seat-S-2"
+- assertVisible: "Total: \\$70\\.00"
+- tapOn: "Buy 2 seats"
+- extendedWaitUntil:
+    visible: "Thanks! Your order is confirmed."
+    timeout: 20000
+- copyTextFrom:
+    text: "Order #\\d+"
+- runScript: scripts/order_pattern.js
+- back
+- tapOn: "My orders"
+- assertVisible: ${output.orderPattern}

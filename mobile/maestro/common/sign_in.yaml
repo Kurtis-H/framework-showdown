@@ -1,0 +1,18 @@
+# Sign in with ${KEY}.
+appId: dev.kurtish.booking_mobile
+---
+- tapOn: "Sign in"
+- extendedWaitUntil:
+    visible:
+      id: "api-key-field"
+    timeout: 20000
+- tapOn:
+    id: "api-key-field"
+- inputText: ${KEY}
+- hideKeyboard
+- tapOn:
+    text: "Sign in"
+    index: 1
+- extendedWaitUntil:
+    visible: "Sign out"
+    timeout: 20000

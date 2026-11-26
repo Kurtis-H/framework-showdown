@@ -1,0 +1,13 @@
+{
+  "name": "showdown-playwright",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.65.1",
+    "@types/node": "^24.0.0",
+    "typescript": "~5.9.3"
+  }
+}

@@ -1,0 +1,14 @@
+# Start from a cleared app and wait for the first screen. Launching is setup,
+# not what the plan tests, and a fresh launch on a CI emulator occasionally
+# never shows the first screen, so it's retried; the scenarios' own steps never are.
+appId: dev.kurtish.booking_mobile
+---
+- retry:
+    maxRetries: 2
+    commands:
+      - launchApp:
+          clearState: true
+          stopApp: true
+      - extendedWaitUntil:
+          visible: "Upcoming events"
+          timeout: 60000

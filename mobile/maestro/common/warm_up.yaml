@@ -1,0 +1,5 @@
+# Not a test: absorbs the first cold start of Maestro's driver and the app
+# before the measured runs. CI ignores its result.
+appId: dev.kurtish.booking_mobile
+---
+- runFlow: open_app.yaml

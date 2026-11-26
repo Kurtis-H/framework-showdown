@@ -1,0 +1,23 @@
+appId: dev.kurtish.booking_mobile
+name: S4 Ten-seat limit
+---
+- runScript:
+    file: scripts/new_event.js
+    env:
+      NAME: S4 Ten-seat limit
+      SEATS: 12
+- runFlow: common/open_app.yaml
+- runFlow: common/open_event.yaml
+- tapOn: {id: "seat-S-1"}
+- tapOn: {id: "seat-S-2"}
+- tapOn: {id: "seat-S-3"}
+- tapOn: {id: "seat-S-4"}
+- tapOn: {id: "seat-S-5"}
+- tapOn: {id: "seat-S-6"}
+- tapOn: {id: "seat-S-7"}
+- tapOn: {id: "seat-S-8"}
+- tapOn: {id: "seat-S-9"}
+- tapOn: {id: "seat-S-10"}
+- tapOn: {id: "seat-S-11"}
+- assertVisible: "You can buy up to 10 seats in one order."
+- assertVisible: "Sign in to buy 10 seats"
