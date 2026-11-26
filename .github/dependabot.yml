@@ -5,10 +5,22 @@ updates:
     schedule:
       interval: weekly
     groups:
+      # WebdriverIO packages only work at matching versions, so they move together.
+      webdriverio:
+        patterns: ["webdriverio", "@wdio/*"]
       test-tools:
         patterns: ["*"]
+        exclude-patterns: ["webdriverio", "@wdio/*"]
         update-types: [minor, patch]
+    ignore:
+      # Types must describe the Node version CI runs (22), not the newest one.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    groups:
+      # Every action change reruns the whole showdown, so batch them.
+      actions:
+        patterns: ["*"]
