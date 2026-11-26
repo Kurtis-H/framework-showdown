@@ -1,0 +1,9 @@
+node_modules/
+results/
+test-results/
+playwright-report/
+cypress/videos/
+cypress/screenshots/
+maestro-output/
+*.apk
+.DS_Store
