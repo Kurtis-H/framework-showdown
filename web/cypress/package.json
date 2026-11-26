@@ -9,6 +9,6 @@
     "@testing-library/cypress": "^10.0.3",
     "@types/node": "^24.19.4",
     "cypress": "^15.0.0",
-    "typescript": "~5.9.3"
+    "typescript": "~7.0.2"
   }
 }
