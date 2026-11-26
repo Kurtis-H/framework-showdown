@@ -7,3 +7,4 @@ cypress/screenshots/
 maestro-output/
 *.apk
 .DS_Store
+__pycache__/
