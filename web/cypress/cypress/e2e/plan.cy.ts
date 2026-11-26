@@ -1,5 +1,5 @@
 // The shared test plan (plan/test-plan.md) in Cypress, against booking-web.
-import { BUYER_KEY, newEvent, rivalBuys, seat, signIn } from "../support/e2e";
+import { BUYER_KEY, newEvent, rivalBuys, seat, signIn } from "../support/plan";
 
 it("S1 Browse events", () => {
   cy.visit("/");

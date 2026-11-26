@@ -10,7 +10,8 @@ export default defineConfig({
     specPattern: "cypress/e2e/**/*.cy.ts",
     supportFile: "cypress/support/e2e.ts",
   },
-  env: { API_URL: process.env.API_URL ?? "http://localhost:8000" },
+  // Public config the specs read with Cypress.expose() (Cypress.env() is deprecated).
+  expose: { API_URL: process.env.API_URL ?? "http://localhost:8000" },
   // Compared run for run with the other frameworks: no retries, no video.
   retries: 0,
   video: false,
