@@ -163,7 +163,7 @@ jobs:
       APK: ${{ github.workspace }}/app-profile.apk
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: apk
       - uses: actions/setup-python@v5
@@ -225,7 +225,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: results-*
           path: artifacts
