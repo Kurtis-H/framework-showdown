@@ -5,7 +5,7 @@ const junitFile = resolve(process.env.JUNIT_FILE ?? "results/junit.xml");
 export const config: WebdriverIO.Config = {
   runner: "local",
   tsConfigPath: "./tsconfig.json",
-  specs: ["./test/**/*.e2e.ts"],
+  specs: ["./test/plan.e2e.ts"],
   maxInstances: 1,
   capabilities: [
     {

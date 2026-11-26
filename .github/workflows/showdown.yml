@@ -203,7 +203,9 @@ jobs:
           script: |
             adb shell settings put global hide_error_dialogs 1 || true
             adb install -r "$APK"
+            # Untimed warm-up for both, so neither first run pays one-off driver setup.
             if [ "${{ matrix.framework }}" = maestro ]; then timeout 4m "$HOME/.maestro/bin/maestro" test mobile/maestro/common/warm_up.yaml || echo "warm-up didn't finish; carrying on"; fi
+            if [ "${{ matrix.framework }}" = appium ]; then (cd mobile/appium && timeout 4m npx wdio run wdio.conf.ts --spec test/warm_up.e2e.ts) || echo "warm-up didn't finish; carrying on"; fi
             python scripts/measure.py run --framework ${{ matrix.framework }} --runs "$RUNS" -- bash "$GITHUB_WORKSPACE/scripts/ci/run.sh" ${{ matrix.framework }}
       - uses: actions/upload-artifact@v4
         if: always()

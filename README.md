@@ -61,6 +61,7 @@ To keep it fair:
 * **Same plan, same data.** The database is reseeded before every run, and each scenario creates its own event through the API.
 * **Idiomatic code, not lowest common denominator.** Each suite finds elements the way its community recommends: roles for Playwright, Testing Library for Cypress, UiAutomator selectors for Appium, and text and ids for Maestro.
 * **No retries, no sleeps.** A failed scenario counts as failed. The one exception is launching the app on the emulator: Maestro relaunches up to twice, because a fresh launch on a CI emulator sometimes never shows a first screen. The scenarios' own steps are never retried.
+* **Same warm-up for both mobile frameworks.** Before the timed runs, each one opens the app once, untimed. That absorbs one-off costs, like Appium installing its UiAutomator2 server on the device, so they don't land in the first measured run.
 * **Fresh runners.** Nothing is cached between jobs, so setup time is a real first install. Shared setup, like building the apps and starting the API, isn't counted.
 * **Flakiness gate.** A job fails if any scenario passes in fewer than 80% of its runs (`MIN_PASS_RATE`). The weekly run does 10 runs per framework, and you can trigger it with any number.
 
