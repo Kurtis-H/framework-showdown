@@ -4,8 +4,8 @@ flows:
 executionOrder:
   continueOnFailure: true
   flowsOrder:
-    - s1_browse
-    - s2_sign_in_errors
-    - s3_buy_two_seats
-    - s4_ten_seat_limit
-    - s5_lose_a_seat
+    - S1 Browse events
+    - S2 Sign-in errors
+    - S3 Buy two seats
+    - S4 Ten-seat limit
+    - S5 Lose a seat to another buyer
