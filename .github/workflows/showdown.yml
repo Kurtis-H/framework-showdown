@@ -105,7 +105,7 @@ jobs:
         run: python scripts/measure.py setup --framework ${{ matrix.framework }} -- bash scripts/ci/setup.sh ${{ matrix.framework }}
       - name: Run the test plan ${{ env.RUNS }} times (timed)
         run: python scripts/measure.py run --framework ${{ matrix.framework }} --runs "$RUNS" -- bash "$GITHUB_WORKSPACE/scripts/ci/run.sh" ${{ matrix.framework }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: results-${{ matrix.framework }}
@@ -134,7 +134,7 @@ jobs:
       - run: flutter pub get
       - name: Build (the emulator reaches the host's API at 10.0.2.2)
         run: flutter build apk --profile --dart-define=API_URL=http://10.0.2.2:8000
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: apk
           path: build/app/outputs/flutter-apk/app-profile.apk
@@ -207,7 +207,7 @@ jobs:
             if [ "${{ matrix.framework }}" = maestro ]; then timeout 4m "$HOME/.maestro/bin/maestro" test mobile/maestro/common/warm_up.yaml || echo "warm-up didn't finish; carrying on"; fi
             if [ "${{ matrix.framework }}" = appium ]; then (cd mobile/appium && timeout 4m npx wdio run wdio.conf.ts --spec test/warm_up.e2e.ts) || echo "warm-up didn't finish; carrying on"; fi
             python scripts/measure.py run --framework ${{ matrix.framework }} --runs "$RUNS" -- bash "$GITHUB_WORKSPACE/scripts/ci/run.sh" ${{ matrix.framework }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: results-${{ matrix.framework }}
@@ -238,7 +238,7 @@ jobs:
         env:
           RESULTS_SOURCE: "[workflow run ${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}), ${{ env.RUNS }} runs per framework"
         run: python scripts/report.py --results results --out RESULTS.md
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: RESULTS
           path: |
