@@ -99,6 +99,34 @@ class RunPhase(unittest.TestCase):
         self.assertGreaterEqual(data["setup_seconds"], 0)
 
 
+class Catch(unittest.TestCase):
+    def test_judging(self):
+        ok = {"S1": True, "S2": True, "S3": False, "S4": True, "S5": True}
+        self.assertTrue(measure.judge_catch(ok, ["S3"])["caught"])
+        missed = measure.judge_catch({s: True for s in measure.SCENARIOS}, ["S3"])
+        self.assertFalse(missed["caught"])
+        self.assertIn("didn't fail S3", missed["problem"])
+        noisy = measure.judge_catch({**ok, "S1": False}, ["S3"])
+        self.assertFalse(noisy["caught"])
+        self.assertIn("also failed S1", noisy["problem"])
+
+    def fake(self, out: Path, failing: tuple[str, ...]) -> Path:
+        cases = [(f"S{i} x", "failure" if f"S{i}" in failing else None) for i in range(1, 6)]
+        script = out / "fake.py"
+        script.write_text(f"import os\nopen(os.environ['JUNIT_FILE'],'w').write({junit(*cases)!r})\n")
+        return script
+
+    def test_catch_phase_passes_only_when_exactly_the_expected_scenarios_fail(self):
+        for failing, expected_code in ((("S3",), 0), ((), 1), (("S3", "S5"), 1)):
+            out = Path(tempfile.mkdtemp())
+            code = measure.main(["catch", "--framework", "fake", "--expect-fail", "S3", "--seed", "", "--out", str(out),
+                                 "--", sys.executable, str(self.fake(out, failing))])
+            data = json.loads((out / "fake-catch.json").read_text())
+            self.assertEqual(code, expected_code, failing)
+            self.assertEqual(data["caught"], expected_code == 0)
+            self.assertEqual(data["failed"], sorted(failing))
+
+
 class Report(unittest.TestCase):
     def test_code_lines_skip_blanks_and_comments(self):
         text = "// c\n\n# c\n/* a\n b */\nconst a = 1;\n  /* one line */\nb();\n"
@@ -109,6 +137,16 @@ class Report(unittest.TestCase):
         for name in ("Playwright", "Cypress", "Appium", "Maestro"):
             self.assertIn(f"| {name} |", md)
         self.assertIn("no data", md)
+
+    def test_catch_section(self):
+        results = Path(tempfile.mkdtemp())
+        (results / "cypress-catch.json").write_text(json.dumps({"failed": ["S3"], "caught": True, "problem": ""}))
+        (results / "maestro-catch.json").write_text(json.dumps(
+            {"failed": [], "caught": False, "problem": "didn't fail S3, so the planted bug went unnoticed"}))
+        md = report.build(results)
+        self.assertIn("| Cypress | S3 | **caught it** |", md)
+        self.assertIn("| Maestro | nothing | **missed it**: didn't fail S3", md)
+        self.assertIn("| Playwright | no data | no data |", md)
 
     def test_numbers_from_results(self):
         results = Path(tempfile.mkdtemp())

@@ -38,6 +38,10 @@ From [10 runs per framework](https://github.com/Kurtis-H/framework-showdown/acti
 * **Setup isn't a differentiator:** every framework installs in 12–17 s on a fresh runner.
 * **Lines of code mislead for Maestro.** YAML steps are short and readable, but API setup needed JavaScript files, and Flutter's merged accessibility labels needed regular expressions such as `(?s)` to match.
 
+### Can each suite actually fail?
+
+A suite that always passes proves nothing. So CI also builds both apps with one planted bug (the order total counts only the first seat; switched on by `VITE_PLANTED_BUG` in [booking-web](https://github.com/Kurtis-H/booking-web/blob/main/src/lib/plantedBug.ts) and `PLANTED_BUG` in [booking-mobile](https://github.com/Kurtis-H/booking-mobile/blob/main/lib/logic/planted_bug.dart)). Each framework runs the plan against it once. **Exactly** S3, which checks the total, must fail: missing it, or failing other scenarios too, fails the job. Results are in [RESULTS.md](RESULTS.md).
+
 ### What it was like to write
 
 * **Playwright:** ran green the first time it ran, locally and in CI. Role-based locators matched the app's accessibility exactly.

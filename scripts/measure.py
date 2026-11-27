@@ -4,9 +4,12 @@ whole test plan runs several times in a row.
 
     measure.py setup --framework cypress --cwd web/cypress -- npm ci
     measure.py run --framework cypress --cwd web/cypress --runs 5 -- npx cypress run
+    measure.py catch --framework cypress --expect-fail S3 -- npx cypress run
 
 `setup` times one command. `run` reseeds the database, then runs the suite,
-`--runs` times. Each run writes JUnit XML to the path in $JUNIT_FILE, which
+`--runs` times. `catch` runs it once against a deliberately broken app and
+checks that exactly the expected scenarios fail: a suite that can't fail
+proves nothing. Each run writes JUnit XML to the path in $JUNIT_FILE, which
 every framework here can produce. Results go to results/<framework>-<phase>.json.
 Standard library only.
 """
@@ -111,6 +114,46 @@ def do_run(args: argparse.Namespace) -> int:
     return 0
 
 
+def do_catch(args: argparse.Namespace) -> int:
+    out = Path(args.out).resolve()
+    run_dir = out / f"{args.framework}-junit" / "catch"
+    run_dir.mkdir(parents=True, exist_ok=True)
+    if args.seed:
+        code = subprocess.call(shlex.split(args.seed), cwd=args.seed_cwd or None)
+        if code != 0:
+            print("reseeding failed", file=sys.stderr)
+            return code
+    env = os.environ.copy()
+    env["JUNIT_FILE"] = str(run_dir / "junit.xml")
+    cmd = [part.replace("{junit}", env["JUNIT_FILE"]) for part in args.cmd]
+    print(f"--- {args.framework} against the planted bug", flush=True)
+    seconds, code = timed(cmd, Path(args.cwd), env)
+    scenarios = parse_junit(sorted(run_dir.glob("*.xml")))
+    verdict = judge_catch(scenarios, args.expect_fail)
+    data = {"framework": args.framework, "expected_failures": sorted(args.expect_fail), "scenarios": scenarios,
+            "seconds": round(seconds, 1), **verdict}
+    path = write(out, args.framework, "catch", data)
+    print(f"    failed: {verdict['failed'] or 'none'}; expected: {sorted(args.expect_fail)} -> "
+          f"{'caught it' if verdict['caught'] else 'DID NOT catch it'} ({path})")
+    if not verdict["caught"]:
+        print(f"::error::{args.framework} {verdict['problem']}")
+        return 1
+    return 0
+
+
+def judge_catch(scenarios: dict[str, bool], expected: list[str]) -> dict:
+    """Caught means the expected scenarios failed and nothing else did."""
+    failed = sorted(s for s, ok in scenarios.items() if not ok)
+    missed = sorted(set(expected) - set(failed))
+    extra = sorted(set(failed) - set(expected))
+    problem = ""
+    if missed:
+        problem = f"didn't fail {', '.join(missed)}, so the planted bug went unnoticed"
+    elif extra:
+        problem = f"also failed {', '.join(extra)}, which the planted bug doesn't affect"
+    return {"failed": failed, "caught": not missed and not extra, "problem": problem}
+
+
 def summarize(runs: list[dict]) -> dict:
     times = sorted(r["seconds"] for r in runs)
     mid = len(times) // 2
@@ -127,7 +170,7 @@ def summarize(runs: list[dict]) -> dict:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest="phase", required=True)
-    for name in ("setup", "run"):
+    for name in ("setup", "run", "catch"):
         p = sub.add_parser(name)
         p.add_argument("--framework", required=True)
         p.add_argument("--cwd", default=".")
@@ -135,9 +178,13 @@ def main(argv: list[str] | None = None) -> int:
         p.add_argument("cmd", nargs=argparse.REMAINDER)
     run = sub.choices["run"]
     run.add_argument("--runs", type=int, default=3)
-    run.add_argument("--seed", default=os.environ.get("SEED_CMD", DEFAULT_SEED),
-                     help="command that resets the database before each run ('' to skip)")
-    run.add_argument("--seed-cwd", default=os.environ.get("SEED_CWD", ""))
+    catch = sub.choices["catch"]
+    catch.add_argument("--expect-fail", action="append", required=True, choices=SCENARIOS,
+                       help="a scenario the broken app should fail (repeatable)")
+    for p in (run, catch):
+        p.add_argument("--seed", default=os.environ.get("SEED_CMD", DEFAULT_SEED),
+                       help="command that resets the database first ('' to skip)")
+        p.add_argument("--seed-cwd", default=os.environ.get("SEED_CWD", ""))
     run.add_argument("--min-pass-rate", type=float, default=float(os.environ.get("MIN_PASS_RATE", "0.8")),
                      help="fail the job if any scenario passes less often than this")
     args = parser.parse_args(argv)
@@ -145,7 +192,7 @@ def main(argv: list[str] | None = None) -> int:
         args.cmd = args.cmd[1:]
     if not args.cmd:
         parser.error("give the command to time after --")
-    return do_setup(args) if args.phase == "setup" else do_run(args)
+    return {"setup": do_setup, "run": do_run, "catch": do_catch}[args.phase](args)
 
 
 if __name__ == "__main__":
