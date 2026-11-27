@@ -21,21 +21,22 @@ The apps under test are real projects with their own test suites: [booking-web](
 
 ## Results
 
-From [10 runs per framework](https://github.com/Kurtis-H/framework-showdown/actions/runs/45901152203) (full tables in [RESULTS.md](RESULTS.md)):
+From the latest [10 runs per framework](https://github.com/Kurtis-H/framework-showdown/actions/runs/45922842258) (full tables in [RESULTS.md](RESULTS.md)):
 
-| | Platform | Setup | One run of the plan (median) | Slowest run | Runs fully green | Test code |
-|---|---|---|---|---|---|---|
-| **Playwright** | Web | 17 s | **3 s** | 3 s | 10 of 10 | **97 lines** |
-| **Cypress** | Web | 14 s | 8 s | 15 s | 10 of 10 | 107 lines |
-| **Appium** | Android | 17 s | **52 s** | 70 s | 10 of 10 | 150 lines |
-| **Maestro** | Android | 12 s | 1.9 min | 2.9 min | 10 of 10 (see note) | 178 lines |
+| | Platform | Setup | One run of the plan (median) | Slowest run | Runs fully green | Catches the planted bug | Test code |
+|---|---|---|---|---|---|---|---|
+| **Playwright** | Web | 31 s | **3 s** | 5 s | 10 of 10 | yes | **97 lines** |
+| **Cypress** | Web | 10 s | 6 s | 16 s | 10 of 10 | yes | 107 lines |
+| **Appium** | Android | 12 s | **48 s** | 58 s | 10 of 10 | yes | 150 lines |
+| **Maestro** | Android | 13 s | 1.8 min | 1.9 min | 10 of 10 | yes | 178 lines |
 
 ### What the numbers say
 
-* **Playwright was the fastest by a wide margin:** about 2.5× faster than Cypress on the same app, with the least code. Cypress's first run of each job was about twice as slow as the rest (cold start).
+* **Playwright was the fastest by a wide margin:** about 2× faster than Cypress on the same app, with the least code. Cypress's first run of each job is about twice as slow as the rest (cold start).
 * **On Android, Appium ran the plan about 2× faster than Maestro.** Both clear the app between scenarios. Maestro waits for the screen to settle after every step, which is a likely reason; Appium only waits where the test asks it to.
-* **Note: Maestro's 10/10 leans on a retry.** In 2 of 10 runs the first scenario took about 60 s longer, exactly the launch timeout: the app's first launch of the run never showed a screen, and the launch retry in [`common/open_app.yaml`](mobile/maestro/common/open_app.yaml) recovered it. Without that retry, those runs would have failed. Booking-mobile's own CI sees the same thing ([booking-mobile#14](https://github.com/Kurtis-H/booking-mobile/issues/14)). It looks like an emulator launch problem rather than a Maestro one, but Appium didn't hit it in its 10 runs.
-* **Setup isn't a differentiator:** every framework installs in 12–17 s on a fresh runner.
+* **Maestro sometimes leans on its launch retry.** In the [first 10-run measurement](https://github.com/Kurtis-H/framework-showdown/actions/runs/45901152203), 2 of 10 runs took about 60 s longer (exactly the launch timeout): the app's first launch of the run never showed a screen, and the retry in [`common/open_app.yaml`](mobile/maestro/common/open_app.yaml) recovered it. In the latest one, no run needed it. Booking-mobile's own CI sees the same launch problem ([booking-mobile#14](https://github.com/Kurtis-H/booking-mobile/issues/14)), so it looks like an emulator issue rather than a Maestro one.
+* **Setup isn't a differentiator, and it varies:** every framework installs in 10–31 s on a fresh runner, and the same framework can differ by 2× between measurements (Playwright took 17 s, then 31 s) depending on download speed.
+* **Every suite catches a real bug.** Against the planted bug, each framework failed exactly the scenario that checks the total, and nothing else.
 * **Lines of code mislead for Maestro.** YAML steps are short and readable, but API setup needed JavaScript files, and Flutter's merged accessibility labels needed regular expressions such as `(?s)` to match.
 
 ### Can each suite actually fail?
