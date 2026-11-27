@@ -46,7 +46,7 @@ A suite that always passes proves nothing. So CI also builds both apps with one 
 ### What it was like to write
 
 * **Playwright:** ran green the first time it ran, locally and in CI. Role-based locators matched the app's accessibility exactly.
-* **Cypress:** the first CI run crashed before any test because the spec re-imported the support file, so Testing Library's commands were registered twice. Cypress 15 also deprecates `Cypress.env()` in favour of `expose`.
+* **Cypress:** the first CI run crashed before any test because the spec re-imported the support file, so Testing Library's commands were registered twice. Cypress 15 also deprecates `Cypress.env()` in favor of `expose`.
 * **Appium:** Flutter puts text in `content-desc` and ids in `resource-id`, so the suite needs its own small XPath and UiSelector helpers (`byText`, `byId`). Typing, scrolling and clearing the app all work through UiAutomator2.
 * **Maestro:** the quickest to read, and no code to compile. Text matching is a full-string regex, which doesn't match Flutter's multi-line labels unless the app exposes ids. There's no deep linking, so every scenario pages through the list.
 

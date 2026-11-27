@@ -15,14 +15,14 @@ Every suite in this repo implements these five scenarios, with the same names, a
 | ID | Name | Steps | Expected |
 |---|---|---|---|
 | S1 | Browse events | Open the app; go to the next page of events | "Upcoming events" is shown with a page count; after Next, "Page 2 of N" |
-| S2 | Sign-in errors | Open sign-in; submit with no key; then submit `key-not-real` | First "Enter an API key.", then "That API key wasn't recognised." |
+| S2 | Sign-in errors | Open sign-in; submit with no key; then submit `key-not-real` | First "Enter an API key.", then "That API key wasn't recognized." |
 | S3 | Buy two seats | New event (4 seats at $35.00); sign in as a buyer; pick S-1 and S-2; buy | Total "$70.00" before buying; an order confirmation; the order is listed under My orders |
 | S4 | Ten-seat limit | New event (12 seats); pick S-1 to S-11 | "You can buy up to 10 seats in one order." and only 10 seats in the order |
 | S5 | Lose a seat to another buyer | New event (2 seats); sign in; pick S-1; another buyer buys S-1 through the API; buy | "Someone just took one of those seats…" and S-1 is no longer offered |
 
 ## What gets measured
 
-For each framework, CI installs it from scratch, then runs the whole plan several times in a row, reseeding before each run. `scripts/collect.py` records:
+For each framework, CI installs it from scratch, then runs the whole plan several times in a row, reseeding before each run. `scripts/measure.py` records:
 
 * **Setup time:** installing the framework and its browser, driver or CLI (shared setup, such as building the app and starting the API, isn't counted)
 * **Run time:** wall-clock time for one full run of the five scenarios, as the median and the slowest
