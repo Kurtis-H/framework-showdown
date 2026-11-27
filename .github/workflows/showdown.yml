@@ -225,9 +225,11 @@ jobs:
             if [ "${{ matrix.framework }}" = maestro ]; then timeout 4m "$HOME/.maestro/bin/maestro" test mobile/maestro/common/warm_up.yaml || echo "warm-up didn't finish; carrying on"; fi
             if [ "${{ matrix.framework }}" = appium ]; then (cd mobile/appium && timeout 4m npx wdio run wdio.conf.ts --spec test/warm_up.e2e.ts) || echo "warm-up didn't finish; carrying on"; fi
             python scripts/measure.py run --framework ${{ matrix.framework }} --runs "$RUNS" -- bash "$GITHUB_WORKSPACE/scripts/ci/run.sh" ${{ matrix.framework }}
-            # Catch check: install the bugged build over the normal one (same
-            # version, so Appium won't reinstall the normal one), then exactly S3 must fail.
-            adb install -r "$GITHUB_WORKSPACE/app-profile-bug-total.apk"
+            # Catch check: swap in the bugged build, then exactly S3 must fail.
+            # Uninstall first: Appium re-signs apps it installs, so the bugged
+            # build can't be installed over its copy.
+            adb uninstall dev.kurtish.booking_mobile || true
+            adb install "$GITHUB_WORKSPACE/app-profile-bug-total.apk"
             APK="$GITHUB_WORKSPACE/app-profile-bug-total.apk" python scripts/measure.py catch --framework ${{ matrix.framework }} --expect-fail S3 -- bash "$GITHUB_WORKSPACE/scripts/ci/run.sh" ${{ matrix.framework }}
       - uses: actions/upload-artifact@v7
         if: always()
