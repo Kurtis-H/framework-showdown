@@ -105,6 +105,16 @@ jobs:
         run: python scripts/measure.py setup --framework ${{ matrix.framework }} -- bash scripts/ci/setup.sh ${{ matrix.framework }}
       - name: Run the test plan ${{ env.RUNS }} times (timed)
         run: python scripts/measure.py run --framework ${{ matrix.framework }} --runs "$RUNS" -- bash "$GITHUB_WORKSPACE/scripts/ci/run.sh" ${{ matrix.framework }}
+      - name: Rebuild booking-web with a planted bug
+        run: |
+          pkill -f "vite preview" || true
+          while pgrep -f "vite preview" > /dev/null; do sleep 0.5; done
+          cd ../booking-web && VITE_PLANTED_BUG=total npm run build
+          nohup npx vite preview --port 4173 --strictPort > ../web-bug.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf "$WEB_URL" > /dev/null && exit 0; sleep 1; done
+          cat ../web-bug.log; exit 1
+      - name: Does it catch the planted bug? (exactly S3 must fail)
+        run: python scripts/measure.py catch --framework ${{ matrix.framework }} --expect-fail S3 -- bash "$GITHUB_WORKSPACE/scripts/ci/run.sh" ${{ matrix.framework }}
       - uses: actions/upload-artifact@v7
         if: always()
         with:
@@ -133,11 +143,19 @@ jobs:
           cache: true
       - run: flutter pub get
       - name: Build (the emulator reaches the host's API at 10.0.2.2)
-        run: flutter build apk --profile --dart-define=API_URL=http://10.0.2.2:8000
+        run: |
+          flutter build apk --profile --dart-define=API_URL=http://10.0.2.2:8000
+          cp build/app/outputs/flutter-apk/app-profile.apk app-profile.apk
+      - name: Build again with a planted bug (for the catch check)
+        run: |
+          flutter build apk --profile --dart-define=API_URL=http://10.0.2.2:8000 --dart-define=PLANTED_BUG=total
+          cp build/app/outputs/flutter-apk/app-profile.apk app-profile-bug-total.apk
       - uses: actions/upload-artifact@v7
         with:
           name: apk
-          path: build/app/outputs/flutter-apk/app-profile.apk
+          path: |
+            app-profile.apk
+            app-profile-bug-total.apk
           retention-days: 7
 
   android:
@@ -207,6 +225,10 @@ jobs:
             if [ "${{ matrix.framework }}" = maestro ]; then timeout 4m "$HOME/.maestro/bin/maestro" test mobile/maestro/common/warm_up.yaml || echo "warm-up didn't finish; carrying on"; fi
             if [ "${{ matrix.framework }}" = appium ]; then (cd mobile/appium && timeout 4m npx wdio run wdio.conf.ts --spec test/warm_up.e2e.ts) || echo "warm-up didn't finish; carrying on"; fi
             python scripts/measure.py run --framework ${{ matrix.framework }} --runs "$RUNS" -- bash "$GITHUB_WORKSPACE/scripts/ci/run.sh" ${{ matrix.framework }}
+            # Catch check: install the bugged build over the normal one (same
+            # version, so Appium won't reinstall the normal one), then exactly S3 must fail.
+            adb install -r "$GITHUB_WORKSPACE/app-profile-bug-total.apk"
+            APK="$GITHUB_WORKSPACE/app-profile-bug-total.apk" python scripts/measure.py catch --framework ${{ matrix.framework }} --expect-fail S3 -- bash "$GITHUB_WORKSPACE/scripts/ci/run.sh" ${{ matrix.framework }}
       - uses: actions/upload-artifact@v7
         if: always()
         with:

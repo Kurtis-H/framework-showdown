@@ -93,6 +93,16 @@ def build(results: Path, root: Path = ROOT) -> str:
                         f"| no data | no data | {lines} |")
             scenario_rows.append(f"| {name.capitalize()} | " + " | ".join("no data" for _ in SCENARIOS) + " |")
 
+    catch_rows = []
+    for name in FRAMEWORKS:
+        catch = load(results, name, "catch")
+        if catch is None:
+            catch_rows.append(f"| {name.capitalize()} | no data | no data |")
+            continue
+        failed = ", ".join(catch["failed"]) or "nothing"
+        verdict = "**caught it**" if catch["caught"] else f"**missed it**: {catch['problem']}"
+        catch_rows.append(f"| {name.capitalize()} | {failed} | {verdict} |")
+
     source = os.environ.get("RESULTS_SOURCE", "")
     return "\n".join([
         "# Results",
@@ -111,6 +121,16 @@ def build(results: Path, root: Path = ROOT) -> str:
         "| Framework | " + " | ".join(f"{sid} {title}" for sid, title in SCENARIOS.items()) + " |",
         "|---|" + "---|" * len(SCENARIOS),
         *scenario_rows,
+        "",
+        "## Does each suite catch a real bug?",
+        "",
+        "Each app is also built with a planted bug (the order total counts only the first seat), and every "
+        "suite runs the plan against it once. Only S3, which checks the total, should fail; failing anything "
+        "else as well would be noise, not a catch.",
+        "",
+        "| Framework | Failed | Verdict |",
+        "|---|---|---|",
+        *catch_rows,
         "",
         "**Setup** is installing the framework and its browser, driver or CLI on a fresh runner. Building the app "
         "and starting the API are shared by every framework on a platform, so they aren't counted. "
