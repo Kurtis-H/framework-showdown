@@ -47,7 +47,10 @@ A suite that always passes proves nothing. So CI also builds both apps with one 
 
 * **Playwright:** ran green the first time it ran, locally and in CI. Role-based locators matched the app's accessibility exactly.
 * **Cypress:** the first CI run crashed before any test because the spec re-imported the support file, so Testing Library's commands were registered twice. Cypress 15 also deprecates `Cypress.env()` in favor of `expose`.
-* **Appium:** Flutter puts text in `content-desc` and ids in `resource-id`, so the suite needs its own small XPath and UiSelector helpers (`byText`, `byId`). Typing, scrolling and clearing the app all work through UiAutomator2.
+* **Appium:** Flutter puts text in `content-desc` and ids in `resource-id`, so the suite needs its own small XPath and UiSelector helpers (`byText`, `byId`). Typing, scrolling and clearing the app all work through UiAutomator2. The app's redesign (taller cards, so lists scroll) surfaced three more issues, each diagnosed from CI logs:
+  * `UiScrollable.scrollIntoView` missed items further down a Flutter list. Swiping until the element shows, as Maestro's `scrollUntilVisible` does, works.
+  * On a Pixel 6 screen (about 6x the default device's pixels, software-rendered on CI), UiAutomator2 sometimes couldn't read the app's window for over a minute after a restart, while Maestro on the same screen was fine. Appium runs on the default device instead, and also skips the wait for an "idle" app (`waitForIdleTimeout: 0`), since every step already waits for its own element. Maestro runs on a Pixel 6, because it taps without scrolling and the default screen hides seats behind the bottom bar.
+  * About 1 sign-in in 15 typed the API key before Flutter had focused the field, and the key was dropped (the field stayed empty). The helper now waits for focus, checks the masked field shows one dot per character, and logs a retype if it ever needs one.
 * **Maestro:** the quickest to read, and no code to compile. Text matching is a full-string regex, which doesn't match Flutter's multi-line labels unless the app exposes ids. There's no deep linking, so every scenario pages through the list.
 
 ## The same step in each framework

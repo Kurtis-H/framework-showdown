@@ -14,12 +14,26 @@ export const byText = (text: string) =>
 /** A button whose label is exactly `label`. */
 export const button = (label: string) => $(`//android.widget.Button[@content-desc=${xpathString(label)}]`);
 
-/** An element by its Flutter Semantics identifier, scrolled into view first. */
+/**
+ * An element by its Flutter Semantics identifier, scrolled into view first.
+ * Swipes the screen until the element shows, like Maestro's scrollUntilVisible.
+ * UiScrollable.scrollIntoView missed items further down a Flutter list.
+ */
 export async function byId(id: string) {
-  const selector = `android=new UiScrollable(new UiSelector().scrollable(true)).scrollIntoView(new UiSelector().resourceId("${id}"))`;
-  const scrolled = await $(selector);
-  if (await scrolled.isExisting()) return scrolled;
-  return $(`android=new UiSelector().resourceId("${id}")`);
+  const element = $(`android=new UiSelector().resourceId("${id}")`);
+  for (let swipe = 0; swipe < 8; swipe++) {
+    if (await element.isDisplayed().catch(() => false)) return element;
+    const { width, height } = await driver.getWindowSize();
+    await driver.execute("mobile: scrollGesture", {
+      left: Math.round(width * 0.1),
+      top: Math.round(height * 0.25),
+      width: Math.round(width * 0.8),
+      height: Math.round(height * 0.45),
+      direction: "down",
+      percent: 0.6,
+    });
+  }
+  return element;
 }
 
 export const idGone = (id: string) =>
@@ -35,7 +49,18 @@ function xpathString(s: string) {
 export async function freshApp() {
   await driver.execute("mobile: clearApp", { appId: APP_ID });
   await driver.activateApp(APP_ID);
-  await byText("Upcoming events").waitForDisplayed({ timeout: 60_000 });
+  // While the app starts, UiAutomator2 can fail to find the window at all and
+  // throws instead of waiting. Keep asking for up to a minute.
+  const deadline = Date.now() + 60_000;
+  for (;;) {
+    try {
+      await byText("Upcoming events").waitForDisplayed({ timeout: 10_000 });
+      return;
+    } catch (error) {
+      if (Date.now() > deadline) throw error;
+      await driver.pause(1_000);
+    }
+  }
 }
 
 export async function signIn(key: string) {
@@ -43,10 +68,36 @@ export async function signIn(key: string) {
   const field = await $('android=new UiSelector().resourceId("api-key-field")');
   await field.waitForDisplayed();
   await field.click();
-  await field.setValue(key);
+  // Typing before Flutter has focused the field sometimes drops the text (seen
+  // about 1 run in 15 on CI: the field stayed empty). Wait for focus, then
+  // check the masked field shows one dot per character, and type again once if
+  // not. The retry is logged, so the run still records that it happened.
+  await field.waitUntil(async () => (await field.getAttribute("focused")) === "true", {
+    timeout: 10_000,
+    timeoutMsg: "the API key field never took focus",
+  });
+  for (let attempt = 1; ; attempt++) {
+    await field.setValue(key);
+    const typed = ((await field.getText()) ?? "").length;
+    if (typed === key.length) break;
+    console.log(`signIn: field shows ${typed} characters, expected ${key.length} (attempt ${attempt})`);
+    if (attempt === 2) break;
+  }
   await driver.hideKeyboard().catch(() => undefined);
   await button("Sign in").click();
-  await button("Sign out").waitForDisplayed();
+  try {
+    await button("Sign out").waitForDisplayed();
+  } catch (error) {
+    console.log(`signIn: not signed in. On screen: ${await visibleLabels()}`);
+    throw error;
+  }
+}
+
+/** Every label and text on screen, for failure messages. */
+async function visibleLabels(): Promise<string> {
+  const source = await driver.getPageSource().catch(() => "");
+  const labels = [...source.matchAll(/(?:content-desc|text)="([^"]+)"/g)].map((m) => m[1]);
+  return JSON.stringify(labels.slice(0, 30));
 }
 
 /** Fresh events are on page 2 (see plan/test-plan.md). */

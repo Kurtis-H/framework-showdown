@@ -25,7 +25,7 @@ test("S2 Sign-in errors", async ({ page }) => {
   await expect(page.getByRole("alert")).toHaveText("Enter an API key.");
   await page.getByLabel("API key").fill("key-not-real");
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page.getByRole("alert")).toHaveText("That API key wasn't recognised.");
+  await expect(page.getByRole("alert")).toHaveText("That API key wasn't recognized.");
 });
 
 test("S3 Buy two seats", async ({ page }) => {

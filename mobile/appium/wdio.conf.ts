@@ -17,6 +17,10 @@ export const config: WebdriverIO.Config = {
       "appium:appActivity": ".MainActivity",
       "appium:newCommandTimeout": 240,
       "appium:autoGrantPermissions": true,
+      // Don't wait for the app to go "idle" before every command. Flutter apps
+      // often never do, and on a Pixel 6 screen UiAutomator2 timed out finding
+      // the window at all. Every step already waits for the element it needs.
+      "appium:waitForIdleTimeout": 0,
     },
   ],
   // Starts the Appium server from this package's own node_modules.

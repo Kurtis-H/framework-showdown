@@ -21,7 +21,7 @@ describe("plan", () => {
     await field.setValue("key-not-real");
     await driver.hideKeyboard().catch(() => undefined);
     await button("Sign in").click();
-    await expect(byText("That API key wasn't recognised.")).toBeDisplayed();
+    await expect(byText("That API key wasn't recognized.")).toBeDisplayed();
   });
 
   it("S3 Buy two seats", async () => {
