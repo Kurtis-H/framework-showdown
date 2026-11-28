@@ -15,7 +15,7 @@ it("S2 Sign-in errors", () => {
   cy.findByRole("alert").should("have.text", "Enter an API key.");
   cy.findByLabelText("API key").type("key-not-real");
   cy.findByRole("button", { name: "Sign in" }).click();
-  cy.findByRole("alert").should("have.text", "That API key wasn't recognised.");
+  cy.findByRole("alert").should("have.text", "That API key wasn't recognized.");
 });
 
 it("S3 Buy two seats", () => {
