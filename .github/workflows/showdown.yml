@@ -213,10 +213,13 @@ jobs:
         with:
           api-level: 34
           target: google_apis
-          # A current phone size, the same as booking-mobile's own CI. The
-          # default device is a small, old screen where the bottom bar covers
-          # seats the plan taps.
-          profile: pixel_6
+          # Maestro runs on a Pixel 6, as booking-mobile's own CI does: on the
+          # default small screen the bottom bar covers seats it taps, and Maestro
+          # doesn't scroll for a tap. Appium stays on the default device: on the
+          # Pixel 6 screen (about 6x the pixels, software-rendered) UiAutomator2
+          # sometimes couldn't read the app's window for over a minute after a
+          # restart. Appium scrolls to each element, so the small screen is fine.
+          profile: ${{ matrix.framework == 'maestro' && 'pixel_6' || '' }}
           arch: x86_64
           cores: 4
           ram-size: 4096M
