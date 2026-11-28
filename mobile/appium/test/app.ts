@@ -69,9 +69,25 @@ export async function signIn(key: string) {
   await field.waitForDisplayed();
   await field.click();
   await field.setValue(key);
+  // The field is masked, but shows one dot per character: a diagnostic for
+  // whether the whole key went in.
+  const typed = ((await field.getText()) ?? "").length;
+  if (typed !== key.length) console.log(`signIn: field shows ${typed} characters, expected ${key.length}`);
   await driver.hideKeyboard().catch(() => undefined);
   await button("Sign in").click();
-  await button("Sign out").waitForDisplayed();
+  try {
+    await button("Sign out").waitForDisplayed();
+  } catch (error) {
+    console.log(`signIn: not signed in. On screen: ${await visibleLabels()}`);
+    throw error;
+  }
+}
+
+/** Every label and text on screen, for failure messages. */
+async function visibleLabels(): Promise<string> {
+  const source = await driver.getPageSource().catch(() => "");
+  const labels = [...source.matchAll(/(?:content-desc|text)="([^"]+)"/g)].map((m) => m[1]);
+  return JSON.stringify(labels.slice(0, 30));
 }
 
 /** Fresh events are on page 2 (see plan/test-plan.md). */
