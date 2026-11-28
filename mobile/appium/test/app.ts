@@ -68,11 +68,21 @@ export async function signIn(key: string) {
   const field = await $('android=new UiSelector().resourceId("api-key-field")');
   await field.waitForDisplayed();
   await field.click();
-  await field.setValue(key);
-  // The field is masked, but shows one dot per character: a diagnostic for
-  // whether the whole key went in.
-  const typed = ((await field.getText()) ?? "").length;
-  if (typed !== key.length) console.log(`signIn: field shows ${typed} characters, expected ${key.length}`);
+  // Typing before Flutter has focused the field sometimes drops the text (seen
+  // about 1 run in 15 on CI: the field stayed empty). Wait for focus, then
+  // check the masked field shows one dot per character, and type again once if
+  // not. The retry is logged, so the run still records that it happened.
+  await field.waitUntil(async () => (await field.getAttribute("focused")) === "true", {
+    timeout: 10_000,
+    timeoutMsg: "the API key field never took focus",
+  });
+  for (let attempt = 1; ; attempt++) {
+    await field.setValue(key);
+    const typed = ((await field.getText()) ?? "").length;
+    if (typed === key.length) break;
+    console.log(`signIn: field shows ${typed} characters, expected ${key.length} (attempt ${attempt})`);
+    if (attempt === 2) break;
+  }
   await driver.hideKeyboard().catch(() => undefined);
   await button("Sign in").click();
   try {
