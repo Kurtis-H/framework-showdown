@@ -14,12 +14,26 @@ export const byText = (text: string) =>
 /** A button whose label is exactly `label`. */
 export const button = (label: string) => $(`//android.widget.Button[@content-desc=${xpathString(label)}]`);
 
-/** An element by its Flutter Semantics identifier, scrolled into view first. */
+/**
+ * An element by its Flutter Semantics identifier, scrolled into view first.
+ * Swipes the screen until the element shows, like Maestro's scrollUntilVisible.
+ * UiScrollable.scrollIntoView missed items further down a Flutter list.
+ */
 export async function byId(id: string) {
-  const selector = `android=new UiScrollable(new UiSelector().scrollable(true)).scrollIntoView(new UiSelector().resourceId("${id}"))`;
-  const scrolled = await $(selector);
-  if (await scrolled.isExisting()) return scrolled;
-  return $(`android=new UiSelector().resourceId("${id}")`);
+  const element = $(`android=new UiSelector().resourceId("${id}")`);
+  for (let swipe = 0; swipe < 8; swipe++) {
+    if (await element.isDisplayed().catch(() => false)) return element;
+    const { width, height } = await driver.getWindowSize();
+    await driver.execute("mobile: scrollGesture", {
+      left: Math.round(width * 0.1),
+      top: Math.round(height * 0.25),
+      width: Math.round(width * 0.8),
+      height: Math.round(height * 0.45),
+      direction: "down",
+      percent: 0.6,
+    });
+  }
+  return element;
 }
 
 export const idGone = (id: string) =>
@@ -35,7 +49,18 @@ function xpathString(s: string) {
 export async function freshApp() {
   await driver.execute("mobile: clearApp", { appId: APP_ID });
   await driver.activateApp(APP_ID);
-  await byText("Upcoming events").waitForDisplayed({ timeout: 60_000 });
+  // While the app starts, UiAutomator2 can fail to find the window at all and
+  // throws instead of waiting. Keep asking for up to a minute.
+  const deadline = Date.now() + 60_000;
+  for (;;) {
+    try {
+      await byText("Upcoming events").waitForDisplayed({ timeout: 10_000 });
+      return;
+    } catch (error) {
+      if (Date.now() > deadline) throw error;
+      await driver.pause(1_000);
+    }
+  }
 }
 
 export async function signIn(key: string) {
