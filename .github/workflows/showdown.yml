@@ -213,6 +213,10 @@ jobs:
         with:
           api-level: 34
           target: google_apis
+          # A current phone size, the same as booking-mobile's own CI. The
+          # default device is a small, old screen where the bottom bar covers
+          # seats the plan taps.
+          profile: pixel_6
           arch: x86_64
           cores: 4
           ram-size: 4096M
